@@ -26,7 +26,7 @@ SHOW_BITWISE_MAGBLU = 0                       #--- Mostra a junção das máscar
 # ------------------------------------------------
 
 # Setup webcam video capture
-cap = cv2.VideoCapture("/home/borg/Repos/LearningImageProcessing/Atividade_03/vid1.mp4")
+cap = cv2.VideoCapture("vid2.mp4")
 time.sleep(1)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -69,16 +69,18 @@ def calcula_coef(x1, x2, y1, y2):
 
 running = True
 frameCount = 0
-lista_goodLeft = [0]*30
-lista_goodRight = [0]*30
+buffering = 15
+lista_goodLeft = [0]*buffering
+lista_goodRight = [0]*buffering
 
 while running:
     ret, frame = cap.read()
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     maskedFrame = treatForLines(frame)
+    bordas = auto_canny(maskedFrame)
 
-    lines = cv2.HoughLines(maskedFrame, 1, np.pi/180, 180)
+    lines = cv2.HoughLines(bordas, 1, np.pi/180, 180)
 
     for line in lines:
         for rho, theta in line:
@@ -99,17 +101,17 @@ while running:
     
     # print(lista_goodLeft, lista_goodRight)
 
-    average_Left = lista_goodLeft[np.random.randint(30)]
-    average_Right = lista_goodRight[np.random.randint(30)]
-    if frameCount > 30:
+    average_Left = lista_goodLeft[np.random.randint(buffering)]
+    average_Right = lista_goodRight[np.random.randint(buffering)]
+    if 0 not in lista_goodLeft and 0 not in lista_goodRight:
         print(tuple(average_Left[0]),tuple(average_Left[1]))
-        cv2.line(maskedFrame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
-        cv2.line(maskedFrame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
+        cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
+        cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
     # Display the resulting frame
     if SHOW_BASE:
         cv2.imshow('Detector de circulos',frame)
     else:
-        cv2.imshow('Detector de circulos',maskedFrame)
+        cv2.imshow('Detector de circulos',frame)
 
     # Exit condition
     if cv2.waitKey(1) & 0xFF == ord('q'):
