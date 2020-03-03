@@ -45,30 +45,31 @@ def auto_canny(image, sigma=0.33):
 
 def treatForLines(frame):
     # Shape detection using color (cv2.inRange masks are applied over orginal image)
-    mask = cv2.inRange(cv2.GaussianBlur(frame,(5,5),0),np.array([0,0,200]),np.array([180,70,255]))
+    mask = cv2.inRange(cv2.GaussianBlur(frame,(5,5),0),np.array([30,60,220]),np.array([255,255,255]))
     morphMask = cv2.morphologyEx(mask,cv2.MORPH_CLOSE,np.ones((6, 6)))
     contornos, arvore = cv2.findContours(morphMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     frame_out = cv2.drawContours(morphMask, contornos, -1, [0, 0, 255], 3)
     return frame_out
 
-def calcula_coef(x1, y1, x2, y2):
+def calcula_coef(x1, x2, y1, y2):
     dy = (y1 - y2)
     dx = (x1 - x2)
-    direcao = 0
     if dx != 0:
         coef_angular = dy/dx
     else:
         coef_angular = 0
-    if coef_angular > 0.3:
+    if coef_angular > 0.2:
         direcao = 1
-    elif  coef_angular < -0.3:
+    elif  coef_angular < -0.2:
         direcao = -1
+    else:
+        direcao = 0
     return direcao
 
 
 running = True
 frameCount = 0
-buffering = 3
+buffering = 15
 lista_goodLeft = [0]*buffering
 lista_goodRight = [0]*buffering
 
@@ -76,41 +77,42 @@ while running:
     ret, frame = cap.read()
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    maskedFrame = treatForLines(frame_hsv)
+    maskedFrame = treatForLines(frame)
     bordas = auto_canny(maskedFrame)
 
-    lines = cv2.HoughLines(bordas, 1, np.pi/180, 100)
-    if lines is not None:
-        # print(lines)
-        # break
-        for line in lines:
-            for rho, theta in line:
-                a = np.cos(theta)
-                b = np.sin(theta)
-                x0 = a * rho
-                y0 = b * rho
-                pt1 = [int(x0 + 1000*(-b)), int(y0 + 1000*(a))]
-                pt2 = [int(x0 - 1000*(-b)), int(y0 - 1000*(a))]
-                # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
-                state = calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1])
-                if  state == -1:
-                    lista_goodLeft.pop(0)
-                    lista_goodLeft.append((pt1,pt2))
-                if state == 1:
-                    lista_goodRight.pop(0)
-                    lista_goodRight.append((pt1,pt2))
+    lines = cv2.HoughLines(bordas, 1, np.pi/180, 180)
 
-        average_Left = lista_goodLeft[np.random.randint(buffering)]
-        average_Right = lista_goodRight[np.random.randint(buffering)]
-        if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-            cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
-            cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
+    for line in lines:
+        for rho, theta in line:
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            pt1 = [int(x0 + 1000*(-b)), int(y0 + 1000*(a))]
+            pt2 = [int(x0 - 1000*(-b)), int(y0 - 1000*(a))]
+            # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
+
+            if calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1]) == -1:
+                lista_goodLeft.pop(0)
+                lista_goodLeft.append((pt1,pt2))
+            elif calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1]) == 1:
+                lista_goodRight.pop(0)
+                lista_goodRight.append((pt1,pt2))
+    
+    # print(lista_goodLeft, lista_goodRight)
+
+    average_Left = lista_goodLeft[np.random.randint(buffering)]
+    average_Right = lista_goodRight[np.random.randint(buffering)]
+    if 0 not in lista_goodLeft and 0 not in lista_goodRight:
+        print(tuple(average_Left[0]),tuple(average_Left[1]))
+        cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
+        cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
     # Display the resulting frame
     if SHOW_BASE:
         cv2.imshow('Detector de circulos',frame)
     else:
         cv2.imshow('Detector de circulos',frame)
-    # time.sleep(0.05)
+
     # Exit condition
     if cv2.waitKey(1) & 0xFF == ord('q'):
         running = False
