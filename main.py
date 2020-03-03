@@ -65,6 +65,27 @@ def calcula_coef(x1, y1, x2, y2):
         direcao = -1
     return direcao
 
+def calcula_inter(rx1, ry1, rx2, ry2, sx1, sy1, sx2, sy2):
+    dxr = rx1 - rx2
+    dyr = ry1 - ry2
+    dxs = sx1 - sx2
+    dys = sy1 - sy2
+
+    mr = None
+    ms = None
+    
+    if dxr != 0:
+        mr = dyr/dxr
+
+    if dxs != 0:
+        ms = dys/dxs
+
+    _a = sx1/mr
+    _b = (sy1 + ry1)/(ms-mr)
+    _c = -rx1/ms
+    out_x = int(_a + _b + _c)
+    out_y = int(mr * out_x - mr * rx1 + ry1)
+    return (out_x, out_y)
 
 running = True
 frameCount = 0
@@ -105,6 +126,9 @@ while running:
         if 0 not in lista_goodLeft and 0 not in lista_goodRight:
             cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
             cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
+            inter = calcula_inter(average_Right[0][0], average_Right[0][1], average_Right[1][0], average_Right[1][1], average_Left[0][0], average_Left[0][1], average_Left[1][0], average_Left[1][1])
+            print(inter)
+            cv2.circle(frame, inter, 5,(0,255,255), 5)
     # Display the resulting frame
     if SHOW_BASE:
         cv2.imshow('Detector de circulos',frame)
@@ -115,6 +139,7 @@ while running:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         running = False
     
+    time.sleep(0.2)
     frameCount += 1
 # When everything done, release the capture
 cap.release()
