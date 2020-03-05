@@ -128,6 +128,9 @@ while running:
         print(tuple(average_Left[0]),tuple(average_Left[1]))
         cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
         cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
+        inter = calcula_inter(average_Right[0][0], average_Right[0][1], average_Right[1][0], average_Right[1][1], average_Left[0][0], average_Left[0][1], average_Left[1][0], average_Left[1][1])
+        print(inter)
+        cv2.circle(frame, inter, 5,(0,255,255), 5)
     # Display the resulting frame
     if SHOW_BASE:
         cv2.imshow('Detector de circulos',frame)
