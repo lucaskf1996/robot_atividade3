@@ -66,6 +66,27 @@ def calcula_coef(x1, x2, y1, y2):
         direcao = 0
     return direcao
 
+def calcula_inter(rx1, ry1, rx2, ry2, sx1, sy1, sx2, sy2):
+    dxr = rx1 - rx2
+    dyr = ry1 - ry2
+    dxs = sx1 - sx2
+    dys = sy1 - sy2
+
+    mr = None
+    ms = None
+    
+    if dxr != 0:
+        mr = dyr/dxr
+
+    if dxs != 0:
+        ms = dys/dxs
+
+    _a = sx1/mr
+    _b = (sy1 + ry1)/(ms-mr)
+    _c = -rx1/ms
+    out_x = int(_a + _b + _c)
+    out_y = int(mr * out_x - mr * rx1 + ry1)
+    return (out_x, out_y)
 
 running = True
 frameCount = 0
