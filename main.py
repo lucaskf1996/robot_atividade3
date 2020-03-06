@@ -28,8 +28,6 @@ SHOW_BITWISE_MAGBLU = 0                       #--- Mostra a junção das máscar
 # Setup webcam video capture
 cap = cv2.VideoCapture("vid2.mp4")
 time.sleep(1)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 def auto_canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
@@ -66,26 +64,9 @@ def calcula_coef(x1, x2, y1, y2):
         direcao = 0
     return direcao
 
-def calcula_inter(rx1, ry1, rx2, ry2, sx1, sy1, sx2, sy2):
-    dxr = rx1 - rx2
-    dyr = ry1 - ry2
-    dxs = sx1 - sx2
-    dys = sy1 - sy2
-
-    mr = None
-    ms = None
-    
-    if dxr != 0:
-        mr = dyr/dxr
-
-    if dxs != 0:
-        ms = dys/dxs
-
-    _a = sx1/mr
-    _b = (sy1 + ry1)/(ms-mr)
-    _c = -rx1/ms
-    out_x = int(_a + _b + _c)
-    out_y = int(mr * out_x - mr * rx1 + ry1)
+def calcula_inter(x1, y1, x2, y2, x3, y3, x4, y4):
+    out_x = int(((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4))/((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)))
+    out_y = int(((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4))/((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)))
     return (out_x, out_y)
 
 running = True
@@ -117,15 +98,16 @@ while running:
                 lista_goodLeft.pop(0)
                 lista_goodLeft.append((pt1,pt2))
             elif calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1]) == 1:
+                #print("a")
                 lista_goodRight.pop(0)
                 lista_goodRight.append((pt1,pt2))
     
-    # print(lista_goodLeft, lista_goodRight)
+   #print(lista_goodLeft, lista_goodRight)
 
     average_Left = lista_goodLeft[np.random.randint(buffering)]
     average_Right = lista_goodRight[np.random.randint(buffering)]
     if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-        print(tuple(average_Left[0]),tuple(average_Left[1]))
+       # print(tuple(average_Left[0]),tuple(average_Left[1]))
         cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
         cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
         inter = calcula_inter(average_Right[0][0], average_Right[0][1], average_Right[1][0], average_Right[1][1], average_Left[0][0], average_Left[0][1], average_Left[1][0], average_Left[1][1])
