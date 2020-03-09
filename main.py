@@ -63,33 +63,33 @@ while running:
     bordas = auto_canny(maskedFrame)
 
     lines = cv2.HoughLines(bordas, 1, np.pi/180, 180)
+    if lines is not None:
+        for line in lines:
+            for rho, theta in line:
+                a = np.cos(theta)
+                b = np.sin(theta)
+                x0 = a * rho
+                y0 = b * rho
+                pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+                pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+                lin = Line(pt1, pt2)
 
-    for line in lines:
-        for rho, theta in line:
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            lin = Line(pt1, pt2)
+                if lin.m < -0.2:
+                    lista_goodLeft.pop(0)
+                    lista_goodLeft.append(lin)
+                elif lin.m > 0.2:
+                    lista_goodRight.pop(0)
+                    lista_goodRight.append(lin)
 
-            if lin.m < -0.2:
-                lista_goodLeft.pop(0)
-                lista_goodLeft.append(lin)
-            elif lin.m > 0.2:
-                lista_goodRight.pop(0)
-                lista_goodRight.append(lin)
-
-    if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-        average_Left = calculate_mean_line(lista_goodLeft)
-        average_Right =calculate_mean_line(lista_goodRight)
-        a, b = average_Left.getPoints()
-        c, d = average_Right.getPoints()
-        cv2.line(frame, a, b,(255,0,0),2)
-        cv2.line(frame, c, d,(255,0,0),2)
-        inter = average_Left.intersect(average_Right)
-        cv2.circle(frame, inter, 5,(0,255,255), 5)
+        if 0 not in lista_goodLeft and 0 not in lista_goodRight:
+            average_Left = calculate_mean_line(lista_goodLeft)
+            average_Right =calculate_mean_line(lista_goodRight)
+            a, b = average_Left.getPoints()
+            c, d = average_Right.getPoints()
+            cv2.line(frame, a, b,(255,0,0),2)
+            cv2.line(frame, c, d,(255,0,0),2)
+            inter = average_Left.intersect(average_Right)
+            cv2.circle(frame, inter, 5,(0,255,255), 5)
 
         
     # Display the resulting frame
@@ -97,8 +97,7 @@ while running:
     # Exit condition
     if cv2.waitKey(1) & 0xFF == ord('q'):
         running = False
-    
-    frameCount += 1
+
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
