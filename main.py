@@ -15,9 +15,18 @@ from classes import Point, Line
 
 
 # Setup webcam video capture
-cap = cv2.VideoCapture("vid2.mp4")
+cap = cv2.VideoCapture("vid1.mp4")
 time.sleep(1)
 
+# Calculates mean line for intersection
+def calculate_mean_line(linhas):
+  first_point_x = int(round(np.mean([linha.point1.x for linha in linhas])))
+  first_point_y = int(round(np.mean([linha.point1.y for linha in linhas])))
+  second_point_x = int(round(np.mean([linha.point2.x for linha in linhas])))
+  second_point_y = int(round(np.mean([linha.point2.y for linha in linhas])))
+  first_point = Point(first_point_x, first_point_y)
+  second_point = Point(second_point_x, second_point_y)
+  return Line(first_point, second_point)
 
 # Canny edge detection
 def auto_canny(image, sigma=0.33):
@@ -71,10 +80,10 @@ while running:
             elif lin.m > 0.2:
                 lista_goodRight.pop(0)
                 lista_goodRight.append(lin)
-    
-    average_Left = lista_goodLeft[np.random.randint(buffering)]
-    average_Right = lista_goodRight[np.random.randint(buffering)]
+
     if 0 not in lista_goodLeft and 0 not in lista_goodRight:
+        average_Left = calculate_mean_line(lista_goodLeft)
+        average_Right =calculate_mean_line(lista_goodRight)
         a, b = average_Left.getPoints()
         c, d = average_Right.getPoints()
         cv2.line(frame, a, b,(255,0,0),2)
