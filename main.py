@@ -16,8 +16,18 @@ from classes import Point, Line
 
 
 # Setup webcam video capture
-cap = cv2.VideoCapture("vid2.mp4")
+cap = cv2.VideoCapture("vid1.mp4")
 time.sleep(1)
+
+def calculate_mean_line(linhas):
+  first_point_x = int(round(np.mean([linha.point1.x for linha in linhas])))
+  first_point_y = int(round(np.mean([linha.point1.y for linha in linhas])))
+  second_point_x = int(round(np.mean([linha.point2.x for linha in linhas])))
+  second_point_y = int(round(np.mean([linha.point2.y for linha in linhas])))
+  first_point = Point(first_point_x, first_point_y)
+  second_point = Point(second_point_x, second_point_y)
+  return Line(first_point, second_point)
+
 
 def auto_canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
@@ -41,7 +51,7 @@ def treatForLines(frame):
 
 running = True
 frameCount = 0
-buffering = 15
+buffering = 5
 lista_goodLeft = [0]*buffering
 lista_goodRight = [0]*buffering
 
@@ -53,38 +63,40 @@ while running:
     bordas = auto_canny(maskedFrame)
 
     lines = cv2.HoughLines(bordas, 1, np.pi/180, 180)
-
-    for line in lines:
-        for rho, theta in line:
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            lin = Line(pt1, pt2)
-            # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
-
-            if lin.m < -0.2:
-                lista_goodLeft.pop(0)
-                lista_goodLeft.append(lin)
-            elif lin.m > 0.2:
-                lista_goodRight.pop(0)
-                lista_goodRight.append(lin)
+    if lines is not None:
+        for line in lines:
+            for rho, theta in line:
+                a = np.cos(theta)
+                b = np.sin(theta)
+                x0 = a * rho
+                y0 = b * rho
+                pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+                pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+                lin = Line(pt1, pt2)
+                # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
     
-   #print(lista_goodLeft, lista_goodRight)
-
-    average_Left = lista_goodLeft[np.random.randint(buffering)]
-    average_Right = lista_goodRight[np.random.randint(buffering)]
-    if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-        #print(tuple(average_Left[0]),tuple(average_Left[1]))
-        a, b = average_Left.getPoints()
-        c, d = average_Right.getPoints()
-        cv2.line(frame, a, b,(255,0,0),2)
-        cv2.line(frame, c, d,(255,0,0),2)
-        inter = average_Left.intersect(average_Right)
-        print(inter)
-        cv2.circle(frame, inter, 5,(0,255,255), 5)
+                if lin.m < -0.2:
+                    lista_goodLeft.pop(0)
+                    lista_goodLeft.append(lin)
+                elif lin.m > 0.2:
+                    lista_goodRight.pop(0)
+                    lista_goodRight.append(lin)
+        
+       #print(lista_goodLeft, lista_goodRight)
+    
+        if 0 not in lista_goodLeft and 0 not in lista_goodRight:
+            print(lista_goodLeft[0].point1)
+            average_Left = calculate_mean_line(lista_goodLeft)
+            average_Right =calculate_mean_line(lista_goodRight)
+            #print(tuple(average_Left[0]),tuple(average_Left[1]))
+            a, b = average_Left.getPoints()
+            c, d = average_Right.getPoints()
+            print(a,b,c,d)
+            #cv2.line(frame, a, b,(255,0,0),2)
+            #cv2.line(frame, c, d,(255,0,0),2)
+            inter = average_Left.intersect(average_Right)
+            #print(inter)
+            cv2.circle(frame, inter, 5,(0,255,255), 5)
 
         
     # Display the resulting frame
