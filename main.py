@@ -12,18 +12,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import time
 import pandas as pd
+from classes import Point, Line
 
-# STATE MACHINE TO CONTROL OUTPUT:
-# ------------------------------------------------
-# ------------------------------------------------
-SHOW_BRISK = 0                                #--- Mostra a captura analisada com BRISK
-SHOW_BASE = 0                                 #--- Mostra somente a captura direta
-SHOW_MAG_MASK = 0                             #--- Mostra a captura da cor magente
-SHOW_BLU_MASK = 0                             #--- Mostra a captura da cor azul
-SHOW_LINES_DIST = 0                           #--- Mostra os círculos, assim como a linha entre os dois, angulo entre eles e a horizontal(graus), e distância entre eles e a câmera(cm)
-SHOW_BITWISE_MAGBLU = 0                       #--- Mostra a junção das máscaras azul e magenta. Não funciona muito bem, mas é interessante.
-# ------------------------------------------------
-# ------------------------------------------------
 
 # Setup webcam video capture
 cap = cv2.VideoCapture("vid2.mp4")
@@ -49,26 +39,6 @@ def treatForLines(frame):
     frame_out = cv2.drawContours(morphMask, contornos, -1, [0, 0, 255], 3)
     return frame_out
 
-def calcula_coef(x1, x2, y1, y2):
-    dy = (y1 - y2)
-    dx = (x1 - x2)
-    if dx != 0:
-        coef_angular = dy/dx
-    else:
-        coef_angular = 0
-    if coef_angular > 0.2:
-        direcao = 1
-    elif  coef_angular < -0.2:
-        direcao = -1
-    else:
-        direcao = 0
-    return direcao
-
-def calcula_inter(x1, y1, x2, y2, x3, y3, x4, y4):
-    out_x = int(((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4))/((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)))
-    out_y = int(((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4))/((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)))
-    return (out_x, out_y)
-
 running = True
 frameCount = 0
 buffering = 15
@@ -90,35 +60,35 @@ while running:
             b = np.sin(theta)
             x0 = a * rho
             y0 = b * rho
-            pt1 = [int(x0 + 1000*(-b)), int(y0 + 1000*(a))]
-            pt2 = [int(x0 - 1000*(-b)), int(y0 - 1000*(a))]
+            pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+            pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+            lin = Line(pt1, pt2)
             # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
 
-            if calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1]) == -1:
+            if lin.m < -0.2:
                 lista_goodLeft.pop(0)
-                lista_goodLeft.append((pt1,pt2))
-            elif calcula_coef(pt1[0], pt1[1], pt2[0], pt2[1]) == 1:
-                #print("a")
+                lista_goodLeft.append(lin)
+            elif lin.m > 0.2:
                 lista_goodRight.pop(0)
-                lista_goodRight.append((pt1,pt2))
+                lista_goodRight.append(lin)
     
    #print(lista_goodLeft, lista_goodRight)
 
     average_Left = lista_goodLeft[np.random.randint(buffering)]
     average_Right = lista_goodRight[np.random.randint(buffering)]
     if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-       # print(tuple(average_Left[0]),tuple(average_Left[1]))
-        cv2.line(frame,tuple(average_Left[0]),tuple(average_Left[1]),(255,0,0),2)
-        cv2.line(frame,tuple(average_Right[0]),tuple(average_Right[1]),(255,0,0),2)
-        inter = calcula_inter(average_Right[0][0], average_Right[0][1], average_Right[1][0], average_Right[1][1], average_Left[0][0], average_Left[0][1], average_Left[1][0], average_Left[1][1])
+        #print(tuple(average_Left[0]),tuple(average_Left[1]))
+        a, b = average_Left.getPoints()
+        c, d = average_Right.getPoints()
+        cv2.line(frame, a, b,(255,0,0),2)
+        cv2.line(frame, c, d,(255,0,0),2)
+        inter = average_Left.intersect(average_Right)
         print(inter)
         cv2.circle(frame, inter, 5,(0,255,255), 5)
-    # Display the resulting frame
-    if SHOW_BASE:
-        cv2.imshow('Detector de circulos',frame)
-    else:
-        cv2.imshow('Detector de circulos',frame)
 
+        
+    # Display the resulting frame
+    cv2.imshow('Detector de circulos',frame)
     # Exit condition
     if cv2.waitKey(1) & 0xFF == ord('q'):
         running = False
