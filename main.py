@@ -9,7 +9,6 @@ __author__ = "Carlos Dip, João Andrade, Lucas Fukada"
 # Imports
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 import time
 import pandas as pd
 from classes import Point, Line
@@ -19,6 +18,8 @@ from classes import Point, Line
 cap = cv2.VideoCapture("vid2.mp4")
 time.sleep(1)
 
+
+# Canny edge detection
 def auto_canny(image, sigma=0.33):
     # compute the median of the single channel pixel intensities
     v = np.median(image)
@@ -31,6 +32,7 @@ def auto_canny(image, sigma=0.33):
     # return the edged image
     return edged
 
+# Applies white mask for filtering sides of road.
 def treatForLines(frame):
     # Shape detection using color (cv2.inRange masks are applied over orginal image)
     mask = cv2.inRange(cv2.GaussianBlur(frame,(5,5),0),np.array([30,60,220]),np.array([255,255,255]))
@@ -40,8 +42,7 @@ def treatForLines(frame):
     return frame_out
 
 running = True
-frameCount = 0
-buffering = 15
+buffering = 5
 lista_goodLeft = [0]*buffering
 lista_goodRight = [0]*buffering
 
@@ -63,7 +64,6 @@ while running:
             pt1 = Point(int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
             pt2 = Point(int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
             lin = Line(pt1, pt2)
-            # cv2.line(maskedFrame,pt1,pt2,(255,0,0),2)
 
             if lin.m < -0.2:
                 lista_goodLeft.pop(0)
@@ -72,18 +72,14 @@ while running:
                 lista_goodRight.pop(0)
                 lista_goodRight.append(lin)
     
-   #print(lista_goodLeft, lista_goodRight)
-
     average_Left = lista_goodLeft[np.random.randint(buffering)]
     average_Right = lista_goodRight[np.random.randint(buffering)]
     if 0 not in lista_goodLeft and 0 not in lista_goodRight:
-        #print(tuple(average_Left[0]),tuple(average_Left[1]))
         a, b = average_Left.getPoints()
         c, d = average_Right.getPoints()
         cv2.line(frame, a, b,(255,0,0),2)
         cv2.line(frame, c, d,(255,0,0),2)
         inter = average_Left.intersect(average_Right)
-        print(inter)
         cv2.circle(frame, inter, 5,(0,255,255), 5)
 
         
