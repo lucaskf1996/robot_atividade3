@@ -15,11 +15,11 @@ def scaneou(dado):
 	print(dado.ranges[0])
 	if dado.ranges[0]>1.02:
 		print("Maior")		
-		speed = Twist(Vector3(1,0,0), Vector3(0,0,0))
+		speed = Twist(Vector3(0.1,0,0), Vector3(0,0,0))
 		velocidade_saida.publish(speed)
 	elif dado.ranges[0]<1:
 		print("Menor")
-		speed = Twist(Vector3(-1,0,0), Vector3(0,0,0))
+		speed = Twist(Vector3(-0.1,0,0), Vector3(0,0,0))
 		velocidade_saida.publish(speed)
 
 	#print("Intensities")
