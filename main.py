@@ -9,14 +9,12 @@ __author__ = "Carlos Dip, João Andrade, Lucas Fukada"
 # Imports
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 import time
-import pandas as pd
 from classes import Point, Line
 
 
 # Setup webcam video capture
-cap = cv2.VideoCapture("vid1.mp4")
+cap = cv2.VideoCapture("vid2.mp4")
 time.sleep(1)
 
 def calculate_mean_line(linhas):
@@ -43,7 +41,7 @@ def auto_canny(image, sigma=0.33):
 
 def treatForLines(frame):
     # Shape detection using color (cv2.inRange masks are applied over orginal image)
-    mask = cv2.inRange(cv2.GaussianBlur(frame,(5,5),0),np.array([30,60,220]),np.array([255,255,255]))
+    mask = cv2.inRange(cv2.GaussianBlur(frame,(5,5),0),np.array([150,0,180]),np.array([255,255,255]))
     morphMask = cv2.morphologyEx(mask,cv2.MORPH_CLOSE,np.ones((6, 6)))
     contornos, arvore = cv2.findContours(morphMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     frame_out = cv2.drawContours(morphMask, contornos, -1, [0, 0, 255], 3)
@@ -81,6 +79,7 @@ while running:
                 elif lin.m > 0.2:
                     lista_goodRight.pop(0)
                     lista_goodRight.append(lin)
+                
         
        #print(lista_goodLeft, lista_goodRight)
     
@@ -92,8 +91,8 @@ while running:
             a, b = average_Left.getPoints()
             c, d = average_Right.getPoints()
             print(a,b,c,d)
-            #cv2.line(frame, a, b,(255,0,0),2)
-            #cv2.line(frame, c, d,(255,0,0),2)
+            cv2.line(frame, a, b,(255,0,0),2)
+            cv2.line(frame, c, d,(255,0,0),2)
             inter = average_Left.intersect(average_Right)
             #print(inter)
             cv2.circle(frame, inter, 5,(0,255,255), 5)
