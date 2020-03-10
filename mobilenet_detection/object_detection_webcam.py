@@ -8,6 +8,7 @@ print("Para executar:\npython object_detection_webcam.py --prototxt MobileNetSSD
 import numpy as np
 import argparse
 import cv2
+import pprint
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -28,7 +29,7 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 # load our serialized model from disk
-print("[INFO] loading model...")
+#print("[INFO] loading model...")
 net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 
 # load the input image and construct an input blob for the image
@@ -36,18 +37,18 @@ net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 # (note: normalization is done via the authors of the MobileNet SSD
 # implementation)
 
-
-def detect(frame):
+cont = 0
+cond = False
+def detect(frame,contador, condicao):
     image = frame.copy()
     (h, w) = image.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), 127.5)
 
     # pass the blob through the network and obtain the detections and
     # predictions
-    print("[INFO] computing object detections...")
+    #print("[INFO] computing object detections...")
     net.setInput(blob)
     detections = net.forward()
-
     results = []
 
     # loop over the detections
@@ -67,20 +68,27 @@ def detect(frame):
             idx = int(detections[0, 0, i, 1])
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
-
+            
             # display the prediction
-            label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
-            print("[INFO] {}".format(label))
-            cv2.rectangle(image, (startX, startY), (endX, endY),
-                COLORS[idx], 2)
-            y = startY - 15 if startY - 15 > 15 else startY + 15
-            cv2.putText(image, label, (startX, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+            if condicao == True and CLASSES[idx] == "person" and contador >= 50:
+                label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
+                #print("[INFO] {}".format(label))
+                cv2.rectangle(image, (startX, startY), (endX, endY),
+                    COLORS[idx], 2)
+                y = startY - 15 if startY - 15 > 15 else startY + 15
+                cv2.putText(image, label, (startX, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
 
             results.append((CLASSES[idx], confidence*100, (startX, startY),(endX, endY) ))
 
     # show the output image
-    return image, results
+    condicao  = any("person" in sublist for sublist in results) 
+    if condicao == True:
+        contador += 1
+    else:
+        contador = 0
+    print(condicao)
+    return image, results, contador, condicao
 
 
 
@@ -92,24 +100,23 @@ import cv2
 #cap = cv2.VideoCapture('hall_box_battery_1024.mp4')
 cap = cv2.VideoCapture(0)
 
-print("Known classes")
-print(CLASSES)
+#print("Known classes")
+#print(CLASSES)
 
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
     
-    result_frame, result_tuples = detect(frame)
-
+    result_frame, result_tuples, cont, cond = detect(frame, cont, cond)
+    print(cont)
 
     # Display the resulting frame
     cv2.imshow('frame',result_frame)
-
     # Prints the structures results:
     # Format:
     # ("CLASS", confidence, (x1, y1, x2, y3))
-    for t in result_tuples:
-        print(t)
+    #for t in result_tuples:
+       # print(t)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
